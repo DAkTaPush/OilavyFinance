@@ -13,12 +13,10 @@ const createServer = (bot) => {
   // CORS — разрешаем запросы от frontend на Render
   app.use(
     cors({
-      origin: [
-        process.env.MINI_APP_URL || '*',
-        'http://localhost:5173',
-        'http://localhost:3000',
-      ],
+      origin: (origin, cb) => cb(null, true),
       credentials: true,
+      methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     })
   );
 
