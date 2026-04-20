@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: oilavyfinance-backend
+    runtime: node
+    rootDir: app/backend
+    buildCommand: npm install
+    startCommand: node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BOT_TOKEN
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: MINI_APP_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 3000
+
+  - type: web
+    name: oilavyfinance-frontend
+    runtime: static
+    rootDir: app/frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
