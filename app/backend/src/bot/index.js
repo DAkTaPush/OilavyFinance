@@ -1,8 +1,9 @@
 const { Telegraf } = require('telegraf');
-const { startHandler, languageCallbackHandler, currencyCallbackHandler } = require('./handlers/start');
+const { startHandler, languageCallbackHandler, currencyCallbackHandler, newCardCurrencyCallbackHandler } = require('./handlers/start');
 const { createFamilyHandler, joinFamilyHandler } = require('./handlers/family');
 const { messageHandler, deleteTransactionCallback } = require('./handlers/message');
 const { reportHandler } = require('./handlers/report');
+const { cardListHandler, cardActivateCallback, cardDeleteCallback, cardAddCallback } = require('./handlers/cards');
 
 const createBot = () => {
   const token = process.env.BOT_TOKEN;
@@ -17,10 +18,15 @@ const createBot = () => {
   bot.command('create', createFamilyHandler);
   bot.command('join', joinFamilyHandler);
   bot.command('report', reportHandler);
+  bot.command('cards', cardListHandler);
 
   // Callbacks
   bot.action(/^lang_(ru|uz)$/, languageCallbackHandler);
   bot.action(/^currency_(sum|rub)$/, currencyCallbackHandler);
+  bot.action(/^newcard_currency_(sum|rub)$/, newCardCurrencyCallbackHandler);
+  bot.action(/^card_activate_/, cardActivateCallback);
+  bot.action(/^card_delete_/, cardDeleteCallback);
+  bot.action('card_add', cardAddCallback);
   bot.action(/^delete_/, deleteTransactionCallback);
 
   // Текстовые сообщения

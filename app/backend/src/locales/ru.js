@@ -4,11 +4,26 @@ module.exports = {
   btnUzbek: '🇺🇿 O\'zbek tili',
 
   askName: '👤 Введите ваше имя и фамилию:',
-  askCurrency: (name) => `✅ Отлично, *${name}*!\n\n💰 Выберите вашу валюту:`,
+  askCurrency: (name) => `✅ Отлично, *${name}*!\n\n💰 Выберите валюту карты:`,
   btnSum: '🇺🇿 Сум (UZS)',
   btnRub: '🇷🇺 Рубль (RUB)',
-  currencySet: (name, currency) =>
-    `🎉 Регистрация завершена!\n\n👤 *${name}*\n💰 Валюта: ${currency}\n\nТеперь вы готовы к работе!`,
+
+  askCardNumber: '💳 Введите номер карты:\n_(например: 8600 1234 5678 9012)_',
+  askCardBalance: '💰 Введите текущий баланс карты:\n_(например: 20000000)_',
+  cardAdded: (num, holder, balance, cur) =>
+    `✅ Карта добавлена!\n\n💳 *${num}*\n👤 ${holder}\n💰 ${balance} ${cur}\n\nТеперь вы готовы к работе! 🎉`,
+
+  menuCards: '💳 Карты',
+  noCards: '💳 У вас нет карт.\n\nДобавьте карту:',
+  cardItem: (num, holder, balance, cur, active) =>
+    `${active ? '✅ ' : ''}💳 *${num}*\n👤 ${holder}\n💰 ${balance} ${cur}`,
+  btnActivate: '✅ Сделать активной',
+  btnDeleteCard: '🗑 Удалить',
+  btnAddCard: '➕ Добавить карту',
+  cardActivated: '✅ Карта активирована!',
+  cardDeleted: '🗑 Карта удалена.',
+  maxCards: '⚠️ Максимум 5 карт. Удалите старую карту.',
+  askNewCardCurrency: '💱 Выберите валюту новой карты:',
 
   welcome: `Отлично! Личный финансовый режим активирован 🎉
 

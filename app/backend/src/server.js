@@ -6,6 +6,7 @@ const transactionsRouter = require('./api/transactions');
 const analyticsRouter = require('./api/analytics');
 const familyRouter = require('./api/family');
 const userRouter = require('./api/user');
+const cardsRouter = require('./api/cards');
 
 const createServer = (bot) => {
   const app = express();
@@ -33,6 +34,7 @@ const createServer = (bot) => {
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/family', familyRouter);
   app.use('/api/user', userRouter);
+  app.use('/api/cards', cardsRouter);
 
   // Webhook для Telegram (только в production)
   if (bot && process.env.NODE_ENV === 'production') {

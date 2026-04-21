@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  tempCardNumber: {
+    type: String,
+    default: null,
+  },
+  tempCardCurrency: {
+    type: String,
+    default: null,
+  },
   familyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Family',

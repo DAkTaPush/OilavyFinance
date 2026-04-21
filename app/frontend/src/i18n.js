@@ -42,6 +42,23 @@ export const translations = {
     total_incomes:   'ВСЕГО ДОХОДОВ',
     no_tx_day:       'В этот день транзакций нет',
 
+    // Карты
+    my_cards:        'МОИ КАРТЫ',
+    no_cards:        'Карт нет. Добавьте первую.',
+    add_card:        '+ Добавить карту',
+    card_number:     'Номер карты',
+    card_holder:     'Владелец',
+    card_balance:    'Баланс',
+    card_currency:   'Валюта',
+    card_active:     'Активная',
+    activate_card:   'Сделать активной',
+    delete_card:     'Удалить',
+    max_cards:       'Максимум 5 карт',
+    sum_label:       'сум',
+    rub_label:       'руб',
+    card_save:       'Сохранить',
+    card_saving:     'Сохранение...',
+
     // Профиль
     settings:        'НАСТРОЙКИ',
     settings_sub:    'имя, e-mail, Русский...',
@@ -115,6 +132,23 @@ export const translations = {
     total_expenses:  'JAMI XARAJATLAR',
     total_incomes:   'JAMI DAROMADLAR',
     no_tx_day:       'Bu kunda tranzaksiyalar yo\'q',
+
+    // Kartalar
+    my_cards:        'MENING KARTALARIM',
+    no_cards:        'Kartalar yo\'q. Birinchisini qo\'shing.',
+    add_card:        '+ Karta qo\'shish',
+    card_number:     'Karta raqami',
+    card_holder:     'Egasi',
+    card_balance:    'Balans',
+    card_currency:   'Valyuta',
+    card_active:     'Faol',
+    activate_card:   'Faollashtirish',
+    delete_card:     'O\'chirish',
+    max_cards:       'Maksimum 5 ta karta',
+    sum_label:       'so\'m',
+    rub_label:       'rubl',
+    card_save:       'Saqlash',
+    card_saving:     'Saqlanmoqda...',
 
     // Profil
     settings:        'SOZLAMALAR',

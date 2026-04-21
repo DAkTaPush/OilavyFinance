@@ -4,11 +4,26 @@ module.exports = {
   btnUzbek: '🇺🇿 O\'zbek tili',
 
   askName: '👤 Ism va familiyangizni kiriting:',
-  askCurrency: (name) => `✅ Ajoyib, *${name}*!\n\n💰 Valyutangizni tanlang:`,
+  askCurrency: (name) => `✅ Ajoyib, *${name}*!\n\n💰 Karta valyutasini tanlang:`,
   btnSum: '🇺🇿 So\'m (UZS)',
   btnRub: '🇷🇺 Rubl (RUB)',
-  currencySet: (name, currency) =>
-    `🎉 Ro'yxatdan o'tish yakunlandi!\n\n👤 *${name}*\n💰 Valyuta: ${currency}\n\nEndi ishga tayyor!`,
+
+  askCardNumber: '💳 Karta raqamini kiriting:\n_(masalan: 8600 1234 5678 9012)_',
+  askCardBalance: '💰 Kartadagi joriy balansni kiriting:\n_(masalan: 20000000)_',
+  cardAdded: (num, holder, balance, cur) =>
+    `✅ Karta qo'shildi!\n\n💳 *${num}*\n👤 ${holder}\n💰 ${balance} ${cur}\n\nEndi ishga tayyor! 🎉`,
+
+  menuCards: '💳 Kartalar',
+  noCards: '💳 Sizda kartalar yo\'q.\n\nKarta qo\'shing:',
+  cardItem: (num, holder, balance, cur, active) =>
+    `${active ? '✅ ' : ''}💳 *${num}*\n👤 ${holder}\n💰 ${balance} ${cur}`,
+  btnActivate: '✅ Faollashtirish',
+  btnDeleteCard: '🗑 O\'chirish',
+  btnAddCard: '➕ Karta qo\'shish',
+  cardActivated: '✅ Karta faollashtirildi!',
+  cardDeleted: '🗑 Karta o\'chirildi.',
+  maxCards: '⚠️ Maksimum 5 ta karta. Eski kartani o\'chiring.',
+  askNewCardCurrency: '💱 Yangi karta valyutasini tanlang:',
 
   welcome: `Ajoyib! Shaxsiy moliyaviy rejim faollashtirildi 🎉
 
