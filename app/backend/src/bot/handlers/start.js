@@ -59,14 +59,14 @@ const languageCallbackHandler = async (ctx) => {
         username: ctx.from.username || null,
         firstName: ctx.from.first_name || '',
         language,
-        ...(isNew && { onboardingStep: 'awaiting_name' }),
+        ...(!isOnboarded && { onboardingStep: 'awaiting_name' }),
       },
       { upsert: true, new: true }
     );
 
     await ctx.answerCbQuery();
 
-    if (!isNew && isOnboarded) {
+    if (isOnboarded) {
       await ctx.editMessageText(t.alreadyRegistered);
       await ctx.reply(t.menuApp, getMainMenu(t));
       return;
@@ -98,7 +98,7 @@ const currencyCallbackHandler = async (ctx) => {
     const t = require(`../../locales/${user.language}`);
     const fullName = user.fullName || ctx.from.first_name || '';
 
-    await User.findOneAndUpdate({ telegramId }, { currency, onboardingStep: null });
+    await User.findOneAndUpdate({ telegramId }, { currency, $unset: { onboardingStep: 1 } });
 
     await ctx.answerCbQuery();
     await ctx.editMessageText(
