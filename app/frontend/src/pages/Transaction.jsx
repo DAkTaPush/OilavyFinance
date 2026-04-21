@@ -87,23 +87,32 @@ const Transaction = ({ onAddTransaction }) => {
       <div className="page-header">💳 {t(lang, 'nav_transaction')}</div>
 
       <div style={{ padding: '0 14px' }}>
-        {/* Баланс активной карты */}
-        {activeCard && (
-          <div className="card" style={{ textAlign: 'center', padding: '16px 10px', marginBottom: 10 }}>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, fontWeight: 800, letterSpacing: 0.5 }}>
-              {t(lang, 'balance')}
-            </div>
+        {/* Баланс */}
+        <div className="card" style={{ textAlign: 'center', padding: '16px 10px', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, fontWeight: 800, letterSpacing: 0.5 }}>
+            {t(lang, 'balance')}
+          </div>
+          {activeCard ? (
+            <>
+              <div style={{
+                color: activeCard.balance >= 0 ? 'var(--income)' : 'var(--expense)',
+                fontWeight: 900, fontSize: 22,
+              }}>
+                {formatAmount(activeCard.balance)} {activeCard.currency === 'sum' ? t(lang, 'sum_label') : t(lang, 'rub_label')}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                💳 **** {(activeCard.cardNumber || '').replace(/\D/g, '').slice(-4)}
+              </div>
+            </>
+          ) : (
             <div style={{
-              color: activeCard.balance >= 0 ? 'var(--income)' : 'var(--expense)',
+              color: (totals.incomes - totals.expenses) >= 0 ? 'var(--income)' : 'var(--expense)',
               fontWeight: 900, fontSize: 22,
             }}>
-              {formatAmount(activeCard.balance)} {activeCard.currency === 'sum' ? t(lang, 'sum_label') : t(lang, 'rub_label')}
+              {(totals.incomes - totals.expenses) >= 0 ? '+' : ''}{formatAmount(totals.incomes - totals.expenses)}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              💳 **** {(activeCard.cardNumber || '').replace(/\D/g, '').slice(-4)}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Итоговые карточки */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
