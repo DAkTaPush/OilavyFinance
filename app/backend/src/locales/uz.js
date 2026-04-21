@@ -3,6 +3,13 @@ module.exports = {
   btnRussian: '🇷🇺 Русский',
   btnUzbek: '🇺🇿 O\'zbek tili',
 
+  askName: '👤 Ism va familiyangizni kiriting:',
+  askCurrency: (name) => `✅ Ajoyib, *${name}*!\n\n💰 Valyutangizni tanlang:`,
+  btnSum: '🇺🇿 So\'m (UZS)',
+  btnRub: '🇷🇺 Rubl (RUB)',
+  currencySet: (name, currency) =>
+    `🎉 Ro'yxatdan o'tish yakunlandi!\n\n👤 *${name}*\n💰 Valyuta: ${currency}\n\nEndi ishga tayyor!`,
+
   welcome: `Ajoyib! Shaxsiy moliyaviy rejim faollashtirildi 🎉
 
 Men — sizning shaxsiy moliyaviy yordamchingizman. Men nima qila olaman:

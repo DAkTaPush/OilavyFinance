@@ -20,6 +20,20 @@ const userSchema = new mongoose.Schema({
     enum: ['ru', 'uz'],
     default: 'ru',
   },
+  fullName: {
+    type: String,
+    default: null,
+  },
+  currency: {
+    type: String,
+    enum: ['sum', 'rub'],
+    default: 'sum',
+  },
+  onboardingStep: {
+    type: String,
+    enum: ['awaiting_name', 'awaiting_currency', null],
+    default: null,
+  },
   familyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Family',

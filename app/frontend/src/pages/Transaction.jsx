@@ -83,6 +83,22 @@ const Transaction = ({ onAddTransaction }) => {
       <div className="page-header">💳 {t(lang, 'nav_transaction')}</div>
 
       <div style={{ padding: '0 14px' }}>
+        {/* Баланс */}
+        {(() => {
+          const balance = totals.incomes - totals.expenses;
+          const isPositive = balance >= 0;
+          return (
+            <div className="card" style={{ textAlign: 'center', padding: '14px 10px', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 800, letterSpacing: 0.5 }}>
+                {t(lang, 'balance')}
+              </div>
+              <div style={{ color: isPositive ? 'var(--income)' : 'var(--expense)', fontWeight: 900, fontSize: 20 }}>
+                {isPositive ? '+' : ''}{formatAmount(balance)}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Итоговые карточки */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
           <div className="card" style={{ flex: 1, textAlign: 'center', padding: '14px 10px' }}>

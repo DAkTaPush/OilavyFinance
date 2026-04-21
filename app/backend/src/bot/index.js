@@ -1,5 +1,5 @@
 const { Telegraf } = require('telegraf');
-const { startHandler, languageCallbackHandler } = require('./handlers/start');
+const { startHandler, languageCallbackHandler, currencyCallbackHandler } = require('./handlers/start');
 const { createFamilyHandler, joinFamilyHandler } = require('./handlers/family');
 const { messageHandler, deleteTransactionCallback } = require('./handlers/message');
 const { reportHandler } = require('./handlers/report');
@@ -20,6 +20,7 @@ const createBot = () => {
 
   // Callbacks
   bot.action(/^lang_(ru|uz)$/, languageCallbackHandler);
+  bot.action(/^currency_(sum|rub)$/, currencyCallbackHandler);
   bot.action(/^delete_/, deleteTransactionCallback);
 
   // Текстовые сообщения

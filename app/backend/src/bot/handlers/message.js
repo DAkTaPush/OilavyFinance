@@ -25,6 +25,27 @@ const messageHandler = async (ctx) => {
 
     const t = require(`../../locales/${user.language}`);
 
+    // ── Онбординг: ввод имени ───────────────────────────────────
+    if (user.onboardingStep === 'awaiting_name') {
+      const fullName = text.trim();
+      if (fullName.length < 2) {
+        return ctx.reply(t.askName);
+      }
+      await User.findOneAndUpdate({ telegramId }, { fullName, onboardingStep: 'awaiting_currency' });
+      return ctx.reply(
+        t.askCurrency(fullName),
+        {
+          parse_mode: 'Markdown',
+          ...require('telegraf').Markup.inlineKeyboard([
+            [
+              require('telegraf').Markup.button.callback(t.btnSum, 'currency_sum'),
+              require('telegraf').Markup.button.callback(t.btnRub, 'currency_rub'),
+            ],
+          ]),
+        }
+      );
+    }
+
     // ── Кнопка: Отчёт ──────────────────────────────────────────
     if (text === t.menuReport) {
       return reportHandler(ctx);
