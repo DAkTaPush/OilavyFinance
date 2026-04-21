@@ -48,7 +48,9 @@ const languageCallbackHandler = async (ctx) => {
 
     console.log('[BOT] language selected:', language, 'user:', telegramId);
 
-    const isNew = !(await User.exists({ telegramId }));
+    const existingUser = await User.findOne({ telegramId });
+    const isNew = !existingUser;
+    const isOnboarded = existingUser && existingUser.fullName && !existingUser.onboardingStep;
 
     await User.findOneAndUpdate(
       { telegramId },
@@ -57,14 +59,20 @@ const languageCallbackHandler = async (ctx) => {
         username: ctx.from.username || null,
         firstName: ctx.from.first_name || '',
         language,
+        ...(isNew && { onboardingStep: 'awaiting_name' }),
       },
       { upsert: true, new: true }
     );
 
     await ctx.answerCbQuery();
-    const greeting = isNew ? t.welcome : t.alreadyRegistered;
-    await ctx.editMessageText(greeting);
-    await ctx.reply(t.menuApp, getMainMenu(t));
+
+    if (!isNew && isOnboarded) {
+      await ctx.editMessageText(t.alreadyRegistered);
+      await ctx.reply(t.menuApp, getMainMenu(t));
+      return;
+    }
+
+    await ctx.editMessageText(t.askName, { parse_mode: 'Markdown' });
   } catch (err) {
     console.error('[LANGUAGE CALLBACK]', err);
     await ctx.answerCbQuery();
@@ -72,4 +80,37 @@ const languageCallbackHandler = async (ctx) => {
   }
 };
 
-module.exports = { startHandler, languageCallbackHandler, getMainMenu };
+/**
+ * Callback: выбор валюты (currency_sum / currency_rub)
+ */
+const currencyCallbackHandler = async (ctx) => {
+  try {
+    const telegramId = ctx.from.id;
+    const currency = ctx.callbackQuery.data === 'currency_sum' ? 'sum' : 'rub';
+    const currencyLabel = currency === 'sum' ? 'Сум (UZS)' : 'Рубль (RUB)';
+
+    const user = await User.findOne({ telegramId });
+    if (!user) {
+      await ctx.answerCbQuery();
+      return ctx.reply('Введите /start для регистрации.');
+    }
+
+    const t = require(`../../locales/${user.language}`);
+    const fullName = user.fullName || ctx.from.first_name || '';
+
+    await User.findOneAndUpdate({ telegramId }, { currency, onboardingStep: null });
+
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(
+      t.currencySet(fullName, currencyLabel),
+      { parse_mode: 'Markdown' }
+    );
+    await ctx.reply(t.menuApp, getMainMenu(t));
+  } catch (err) {
+    console.error('[CURRENCY CALLBACK]', err);
+    await ctx.answerCbQuery();
+    await ctx.reply('Произошла ошибка. Попробуйте снова.');
+  }
+};
+
+module.exports = { startHandler, languageCallbackHandler, currencyCallbackHandler, getMainMenu };

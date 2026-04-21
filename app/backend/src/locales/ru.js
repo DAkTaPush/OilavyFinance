@@ -3,6 +3,13 @@ module.exports = {
   btnRussian: '🇷🇺 Русский',
   btnUzbek: '🇺🇿 O\'zbek tili',
 
+  askName: '👤 Введите ваше имя и фамилию:',
+  askCurrency: (name) => `✅ Отлично, *${name}*!\n\n💰 Выберите вашу валюту:`,
+  btnSum: '🇺🇿 Сум (UZS)',
+  btnRub: '🇷🇺 Рубль (RUB)',
+  currencySet: (name, currency) =>
+    `🎉 Регистрация завершена!\n\n👤 *${name}*\n💰 Валюта: ${currency}\n\nТеперь вы готовы к работе!`,
+
   welcome: `Отлично! Личный финансовый режим активирован 🎉
 
 Я — ваш персональный финансовый помощник. Вот что я умею:

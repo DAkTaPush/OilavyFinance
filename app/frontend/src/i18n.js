@@ -22,6 +22,7 @@ export const translations = {
     tap_to_add:      'Нажмите кнопку выше чтобы добавить',
 
     // Транзакции
+    balance:         'БАЛАНС',
     search:          'ПОИСК ТРАНЗАКЦИИ...',
     filter_all:      'ВСЕ',
     filter_expenses: 'Расходы',
@@ -95,6 +96,7 @@ export const translations = {
     tap_to_add:      'Qo\'shish uchun yuqoridagi tugmani bosing',
 
     // Tranzaksiyalar
+    balance:         'BALANS',
     search:          'TRANZAKSIYA QIDIRISH...',
     filter_all:      'HAMMASI',
     filter_expenses: 'Xarajatlar',
