@@ -19,6 +19,7 @@ const Transaction = ({ onAddTransaction }) => {
   const [totals, setTotals]             = useState({ expenses: 0, incomes: 0 });
   const [activeCard, setActiveCard]     = useState(null);
   const [loading, setLoading]           = useState(true);
+  const [cardsLoaded, setCardsLoaded]   = useState(false);
   const [showModal, setShowModal]       = useState(false);
   const [modalType, setModalType]       = useState('expense');
 
@@ -38,11 +39,10 @@ const Transaction = ({ onAddTransaction }) => {
       if (filter !== 'all') params.type = filter;
       if (search)           params.search = search;
 
-      const [listRes, expRes, incRes, cardsRes] = await Promise.all([
+      const [listRes, expRes, incRes] = await Promise.all([
         api.get('/api/transactions', { params }),
         api.get('/api/transactions', { params: { type: 'expense', limit: 500 } }),
         api.get('/api/transactions', { params: { type: 'income',  limit: 500 } }),
-        api.get('/api/cards'),
       ]);
 
       setTransactions(listRes.data.transactions || []);
@@ -50,8 +50,17 @@ const Transaction = ({ onAddTransaction }) => {
         expenses: (expRes.data.transactions || []).reduce((s, t) => s + t.amount, 0),
         incomes:  (incRes.data.transactions || []).reduce((s, t) => s + t.amount, 0),
       });
-      const cards = cardsRes.data.cards || [];
-      setActiveCard(cards.find(c => c.isActive) || cards[0] || null);
+
+      // Карты грузим отдельно — чтобы не блокировать основной список
+      try {
+        const cardsRes = await api.get('/api/cards');
+        const cards = cardsRes.data.cards || [];
+        setActiveCard(cards.find(c => c.isActive) || cards[0] || null);
+      } catch {
+        setActiveCard(null);
+      } finally {
+        setCardsLoaded(true);
+      }
     } catch (err) {
       console.error('[TRANSACTION]', err);
     } finally {
