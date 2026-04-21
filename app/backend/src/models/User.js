@@ -31,7 +31,6 @@ const userSchema = new mongoose.Schema({
   },
   onboardingStep: {
     type: String,
-    enum: ['awaiting_name', 'awaiting_currency', null],
     default: null,
   },
   familyId: {
