@@ -2,9 +2,16 @@ const { Markup } = require('telegraf');
 const User = require('../../models/User');
 const Family = require('../../models/Family');
 const Transaction = require('../../models/Transaction');
+const Card = require('../../models/Card');
 const { parseTransaction } = require('../../utils/parser');
 const { formatAmount, formatDate, getCategoryEmoji } = require('../../utils/format');
 const { reportHandler } = require('./report');
+const { getMainMenu } = require('./start');
+
+const maskCard = (num) => {
+  const clean = (num || '').replace(/\D/g, '');
+  return clean.length >= 4 ? `**** **** **** ${clean.slice(-4)}` : num;
+};
 
 const MINI_APP_URL = process.env.MINI_APP_URL || 'http://localhost:5173';
 
@@ -28,22 +35,55 @@ const messageHandler = async (ctx) => {
     // ── Онбординг: ввод имени ───────────────────────────────────
     if (user.onboardingStep === 'awaiting_name') {
       const fullName = text.trim();
-      if (fullName.length < 2) {
-        return ctx.reply(t.askName);
-      }
+      if (fullName.length < 2) return ctx.reply(t.askName);
       await User.findOneAndUpdate({ telegramId }, { fullName, onboardingStep: 'awaiting_currency' });
       return ctx.reply(
         t.askCurrency(fullName),
         {
           parse_mode: 'Markdown',
-          ...require('telegraf').Markup.inlineKeyboard([
+          ...Markup.inlineKeyboard([
             [
-              require('telegraf').Markup.button.callback(t.btnSum, 'currency_sum'),
-              require('telegraf').Markup.button.callback(t.btnRub, 'currency_rub'),
+              Markup.button.callback(t.btnSum, 'currency_sum'),
+              Markup.button.callback(t.btnRub, 'currency_rub'),
             ],
           ]),
         }
       );
+    }
+
+    // ── Онбординг: ввод номера карты ────────────────────────────
+    if (user.onboardingStep === 'awaiting_card_number') {
+      const cardNumber = text.trim();
+      if (cardNumber.length < 4) return ctx.reply(t.askCardNumber, { parse_mode: 'Markdown' });
+      await User.findOneAndUpdate({ telegramId }, { tempCardNumber: cardNumber, onboardingStep: 'awaiting_card_balance' });
+      return ctx.reply(t.askCardBalance, { parse_mode: 'Markdown' });
+    }
+
+    // ── Онбординг: ввод баланса карты ───────────────────────────
+    if (user.onboardingStep === 'awaiting_card_balance') {
+      const balance = parseFloat(text.replace(/[\s,]/g, ''));
+      if (isNaN(balance) || balance < 0) return ctx.reply(t.askCardBalance, { parse_mode: 'Markdown' });
+
+      const currency = user.tempCardCurrency || user.currency || 'sum';
+      const cardNumber = user.tempCardNumber || '';
+      const holderName = user.fullName || user.firstName || '';
+
+      const existingCount = await Card.countDocuments({ userId: telegramId });
+      if (existingCount >= 5) {
+        await User.findOneAndUpdate({ telegramId }, { $unset: { onboardingStep: 1, tempCardNumber: 1, tempCardCurrency: 1 } });
+        return ctx.reply(t.maxCards);
+      }
+
+      await Card.updateMany({ userId: telegramId }, { isActive: false });
+      await Card.create({ userId: telegramId, cardNumber, holderName, balance, currency, isActive: true });
+      await User.findOneAndUpdate({ telegramId }, { $unset: { onboardingStep: 1, tempCardNumber: 1, tempCardCurrency: 1 } });
+
+      const curLabel = currency === 'sum' ? 'сум' : 'руб';
+      await ctx.reply(
+        t.cardAdded(maskCard(cardNumber), holderName, formatAmount(balance), curLabel),
+        { parse_mode: 'Markdown' }
+      );
+      return ctx.reply(t.menuApp, getMainMenu(t));
     }
 
     // ── Кнопка: Отчёт ──────────────────────────────────────────
@@ -79,6 +119,12 @@ const messageHandler = async (ctx) => {
         ? `⚙️ *Sozlamalar*\n\n🌐 Til: O'zbek\n👤 Ism: ${user.firstName || '—'}\n\nTilni o'zgartirish uchun /start ni bosing.`
         : `⚙️ *Настройки*\n\n🌐 Язык: Русский\n👤 Имя: ${user.firstName || '—'}\n\nДля смены языка введите /start.`;
       return ctx.reply(msg, { parse_mode: 'Markdown' });
+    }
+
+    // ── Кнопка: Карты ─────────────────────────────────────────
+    if (text === t.menuCards) {
+      const { cardListHandler } = require('./cards');
+      return cardListHandler(ctx);
     }
 
     // ── Кнопка: Открыть приложение ─────────────────────────────
@@ -123,6 +169,19 @@ const messageHandler = async (ctx) => {
     }
 
     replyText += `\n📅 ${formattedDate}`;
+
+    // Автообновление баланса активной карты
+    const activeCard = await Card.findOne({ userId: telegramId, isActive: true });
+    if (activeCard) {
+      let delta = 0;
+      if (parsed.type === 'expense') delta = -parsed.amount;
+      else if (parsed.type === 'income') delta = parsed.amount;
+      if (delta !== 0) {
+        const updated = await Card.findByIdAndUpdate(activeCard._id, { $inc: { balance: delta } }, { new: true });
+        const curLabel = updated.currency === 'sum' ? 'сум' : 'руб';
+        replyText += `\n💳 Баланс: ${formatAmount(updated.balance)} ${curLabel}`;
+      }
+    }
 
     await ctx.reply(
       replyText,

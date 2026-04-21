@@ -7,7 +7,8 @@ const User = require('../../models/User');
 const getMainMenu = (t) =>
   Markup.keyboard([
     [t.menuReport, t.menuFamily],
-    [t.menuSettings, t.menuApp],
+    [t.menuCards, t.menuSettings],
+    [t.menuApp],
   ]).resize();
 
 /**
@@ -98,14 +99,10 @@ const currencyCallbackHandler = async (ctx) => {
     const t = require(`../../locales/${user.language}`);
     const fullName = user.fullName || ctx.from.first_name || '';
 
-    await User.findOneAndUpdate({ telegramId }, { currency, $unset: { onboardingStep: 1 } });
+    await User.findOneAndUpdate({ telegramId }, { currency, onboardingStep: 'awaiting_card_number' });
 
     await ctx.answerCbQuery();
-    await ctx.editMessageText(
-      t.currencySet(fullName, currencyLabel),
-      { parse_mode: 'Markdown' }
-    );
-    await ctx.reply(t.menuApp, getMainMenu(t));
+    await ctx.editMessageText(t.askCardNumber, { parse_mode: 'Markdown' });
   } catch (err) {
     console.error('[CURRENCY CALLBACK]', err);
     await ctx.answerCbQuery();
@@ -113,4 +110,26 @@ const currencyCallbackHandler = async (ctx) => {
   }
 };
 
-module.exports = { startHandler, languageCallbackHandler, currencyCallbackHandler, getMainMenu };
+/**
+ * Callback: валюта новой карты (newcard_currency_sum / newcard_currency_rub)
+ */
+const newCardCurrencyCallbackHandler = async (ctx) => {
+  try {
+    const telegramId = ctx.from.id;
+    const currency = ctx.callbackQuery.data === 'newcard_currency_sum' ? 'sum' : 'rub';
+
+    const user = await User.findOne({ telegramId });
+    if (!user) { await ctx.answerCbQuery(); return; }
+
+    const t = require(`../../locales/${user.language}`);
+    await User.findOneAndUpdate({ telegramId }, { tempCardCurrency: currency, onboardingStep: 'awaiting_card_number' });
+
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(t.askCardNumber, { parse_mode: 'Markdown' });
+  } catch (err) {
+    console.error('[NEW CARD CURRENCY]', err);
+    await ctx.answerCbQuery();
+  }
+};
+
+module.exports = { startHandler, languageCallbackHandler, currencyCallbackHandler, newCardCurrencyCallbackHandler, getMainMenu };
