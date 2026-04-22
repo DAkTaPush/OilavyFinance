@@ -5,6 +5,7 @@ const { createFamilyHandler, joinFamilyHandler } = require('./handlers/family');
 const { messageHandler, deleteTransactionCallback } = require('./handlers/message');
 const { reportHandler } = require('./handlers/report');
 const { cardListHandler, cardActivateCallback, cardDeleteCallback, cardAddCallback } = require('./handlers/cards');
+const { deleteAkkHandler } = require('./handlers/deleteakk');
 
 const createBot = () => {
   const token = process.env.BOT_TOKEN;
@@ -20,6 +21,7 @@ const createBot = () => {
   bot.command('join', joinFamilyHandler);
   bot.command('report', reportHandler);
   bot.command('cards', cardListHandler);
+  bot.command('deleteakk', deleteAkkHandler);
 
   // Callbacks
   bot.action(/^lang_(ru|uz)$/, languageCallbackHandler);
