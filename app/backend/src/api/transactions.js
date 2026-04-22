@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const Card = require('../models/Card');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
@@ -89,6 +90,17 @@ router.post('/', async (req, res) => {
       date: date ? new Date(date) : new Date(),
     });
 
+    // Обновляем баланс активной карты
+    const activeCard = await Card.findOne({ userId: telegramId, isActive: true });
+    if (activeCard) {
+      let delta = 0;
+      if (type === 'expense')  delta = -amount;
+      if (type === 'income')   delta = +amount;
+      if (delta !== 0) {
+        await Card.findByIdAndUpdate(activeCard._id, { $inc: { balance: delta } });
+      }
+    }
+
     console.log('[API] transaction created:', transaction._id, 'user:', telegramId);
 
     return res.status(201).json(transaction);
@@ -116,6 +128,17 @@ router.delete('/:id', async (req, res) => {
     }
 
     await Transaction.deleteOne({ _id: id });
+
+    // Возвращаем баланс карты при удалении
+    const activeCard = await Card.findOne({ userId: telegramId, isActive: true });
+    if (activeCard) {
+      let delta = 0;
+      if (transaction.type === 'expense') delta = +transaction.amount;
+      if (transaction.type === 'income')  delta = -transaction.amount;
+      if (delta !== 0) {
+        await Card.findByIdAndUpdate(activeCard._id, { $inc: { balance: delta } });
+      }
+    }
 
     console.log('[API] transaction deleted:', id, 'user:', telegramId);
 
