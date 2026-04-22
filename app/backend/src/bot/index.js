@@ -6,6 +6,7 @@ const { messageHandler, deleteTransactionCallback } = require('./handlers/messag
 const { reportHandler } = require('./handlers/report');
 const { cardListHandler, cardActivateCallback, cardDeleteCallback, cardAddCallback } = require('./handlers/cards');
 const { deleteAkkHandler } = require('./handlers/deleteakk');
+const { exportHandler } = require('./handlers/export');
 
 const createBot = () => {
   const token = process.env.BOT_TOKEN;
@@ -22,6 +23,7 @@ const createBot = () => {
   bot.command('report', reportHandler);
   bot.command('cards', cardListHandler);
   bot.command('deleteakk', deleteAkkHandler);
+  bot.command('export',    exportHandler);
 
   // Callbacks
   bot.action(/^lang_(ru|uz)$/, languageCallbackHandler);

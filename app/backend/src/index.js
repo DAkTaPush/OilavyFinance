@@ -2,6 +2,7 @@ require('dotenv').config();
 const connectDB = require('./db');
 const createBot = require('./bot/index');
 const createServer = require('./server');
+const { startWeeklyReportCron } = require('./services/weeklyReport');
 
 const PORT = process.env.PORT || 3000;
 
@@ -29,6 +30,9 @@ const start = async () => {
       await bot.launch();
       console.log('[BOT] Polling запущен');
     }
+
+    // Запускаем еженедельный отчёт (каждое воскресенье 09:00 Ташкент)
+    startWeeklyReportCron(bot);
 
     const shutdown = (signal) => {
       try { bot.stop(signal); } catch (_) {}
