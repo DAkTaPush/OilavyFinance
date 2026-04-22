@@ -98,7 +98,7 @@ const Transaction = ({ onAddTransaction }) => {
                 color: activeCard.balance >= 0 ? 'var(--income)' : 'var(--expense)',
                 fontWeight: 900, fontSize: 22,
               }}>
-                {formatAmount(activeCard.balance)} {activeCard.currency === 'sum' ? t(lang, 'sum_label') : t(lang, 'rub_label')}
+                {new Intl.NumberFormat('ru-RU').format(activeCard.balance ?? 0)} {activeCard.currency === 'sum' ? t(lang, 'sum_label') : t(lang, 'rub_label')}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
                 💳 **** {(activeCard.cardNumber || '').replace(/\D/g, '').slice(-4)}
