@@ -30,8 +30,12 @@ const start = async () => {
       console.log('[BOT] Polling запущен');
     }
 
-    process.once('SIGINT',  () => { bot.stop('SIGINT');  process.exit(0); });
-    process.once('SIGTERM', () => { bot.stop('SIGTERM'); process.exit(0); });
+    const shutdown = (signal) => {
+      try { bot.stop(signal); } catch (_) {}
+      process.exit(0);
+    };
+    process.once('SIGINT',  () => shutdown('SIGINT'));
+    process.once('SIGTERM', () => shutdown('SIGTERM'));
 
   } catch (err) {
     console.error('[START ERROR]', err);
