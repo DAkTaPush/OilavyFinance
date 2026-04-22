@@ -8,6 +8,15 @@ const { formatAmount, formatDate, getCategoryEmoji } = require('../../utils/form
 const { reportHandler } = require('./report');
 const { getMainMenu } = require('./start');
 
+// Тексты кнопок меню — блокируем их во время онбординга
+const MENU_TEXTS = new Set([
+  '📊 Отчёт', '📊 Hisobot',
+  '👨‍👩‍👧 Семья', '👨‍👩‍👧 Oila',
+  '⚙️ Настройки', '⚙️ Sozlamalar',
+  '📱 Открыть приложение', '📱 Ilovani ochish',
+  '💳 Карты', '💳 Kartalar',
+]);
+
 const maskCard = (num) => {
   const clean = (num || '').replace(/\D/g, '');
   return clean.length >= 4 ? `**** **** **** ${clean.slice(-4)}` : num;
@@ -34,9 +43,20 @@ const messageHandler = async (ctx) => {
 
     // ── Онбординг: ввод имени ───────────────────────────────────
     if (user.onboardingStep === 'awaiting_name') {
+      // Защита: игнорируем кнопки меню
+      if (MENU_TEXTS.has(text)) {
+        const warn = user.language === 'uz'
+          ? '⚠️ Avval ro\'yxatdan o\'ting.\n\n👤 Ism va familiyangizni kiriting:'
+          : '⚠️ Сначала завершите регистрацию.\n\n👤 Введите ваше имя и фамилию:';
+        const backLabel = user.language === 'uz' ? '← Orqaga (til)' : '← Назад (язык)';
+        return ctx.reply(warn, {
+          ...Markup.inlineKeyboard([[Markup.button.callback(backLabel, 'onb_back_lang')]]),
+        });
+      }
       const fullName = text.trim();
       if (fullName.length < 2) return ctx.reply(t.askName);
       await User.findOneAndUpdate({ telegramId }, { fullName, onboardingStep: 'awaiting_currency' });
+      const backLabel = user.language === 'uz' ? '← Orqaga (ism)' : '← Назад (имя)';
       return ctx.reply(
         t.askCurrency(fullName),
         {
@@ -46,6 +66,7 @@ const messageHandler = async (ctx) => {
               Markup.button.callback(t.btnSum, 'currency_sum'),
               Markup.button.callback(t.btnRub, 'currency_rub'),
             ],
+            [Markup.button.callback(backLabel, 'onb_back_name')],
           ]),
         }
       );
@@ -53,16 +74,52 @@ const messageHandler = async (ctx) => {
 
     // ── Онбординг: ввод номера карты ────────────────────────────
     if (user.onboardingStep === 'awaiting_card_number') {
+      // Защита: игнорируем кнопки меню
+      if (MENU_TEXTS.has(text)) {
+        const warn = user.language === 'uz'
+          ? '⚠️ Avval ro\'yxatdan o\'ting.\n\n💳 Karta raqamini kiriting:'
+          : '⚠️ Сначала завершите регистрацию.\n\n💳 Введите номер карты:';
+        const backLabel = user.language === 'uz' ? '← Orqaga (valyuta)' : '← Назад (валюта)';
+        return ctx.reply(warn, {
+          ...Markup.inlineKeyboard([[Markup.button.callback(backLabel, 'onb_back_currency')]]),
+        });
+      }
       const cardNumber = text.trim();
-      if (cardNumber.length < 4) return ctx.reply(t.askCardNumber, { parse_mode: 'Markdown' });
+      if (cardNumber.length < 4) {
+        const backLabel = user.language === 'uz' ? '← Orqaga (valyuta)' : '← Назад (валюта)';
+        return ctx.reply(t.askCardNumber, {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([[Markup.button.callback(backLabel, 'onb_back_currency')]]),
+        });
+      }
       await User.findOneAndUpdate({ telegramId }, { tempCardNumber: cardNumber, onboardingStep: 'awaiting_card_balance' });
-      return ctx.reply(t.askCardBalance, { parse_mode: 'Markdown' });
+      const backLabel = user.language === 'uz' ? '← Orqaga (karta raqami)' : '← Назад (номер карты)';
+      return ctx.reply(t.askCardBalance, {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[Markup.button.callback(backLabel, 'onb_back_card_num')]]),
+      });
     }
 
     // ── Онбординг: ввод баланса карты ───────────────────────────
     if (user.onboardingStep === 'awaiting_card_balance') {
+      // Защита: игнорируем кнопки меню
+      if (MENU_TEXTS.has(text)) {
+        const warn = user.language === 'uz'
+          ? '⚠️ Avval ro\'yxatdan o\'ting.\n\n💰 Kartadagi balansni kiriting:'
+          : '⚠️ Сначала завершите регистрацию.\n\n💰 Введите баланс карты:';
+        const backLabel = user.language === 'uz' ? '← Orqaga (karta raqami)' : '← Назад (номер карты)';
+        return ctx.reply(warn, {
+          ...Markup.inlineKeyboard([[Markup.button.callback(backLabel, 'onb_back_card_num')]]),
+        });
+      }
       const balance = parseFloat(text.replace(/[\s,]/g, ''));
-      if (isNaN(balance) || balance < 0) return ctx.reply(t.askCardBalance, { parse_mode: 'Markdown' });
+      if (isNaN(balance) || balance < 0) {
+        const backLabel = user.language === 'uz' ? '← Orqaga (karta raqami)' : '← Назад (номер карты)';
+        return ctx.reply(t.askCardBalance, {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([[Markup.button.callback(backLabel, 'onb_back_card_num')]]),
+        });
+      }
 
       const currency = user.tempCardCurrency || user.currency || 'sum';
       const cardNumber = user.tempCardNumber || '';

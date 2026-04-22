@@ -1,6 +1,10 @@
 const { Markup } = require('telegraf');
 const User = require('../../models/User');
 
+// Кнопка НАЗАД под каждым шагом онбординга
+const backBtn = (label, action) =>
+  Markup.inlineKeyboard([[Markup.button.callback(label, action)]]);
+
 /**
  * Генерирует reply keyboard главного меню
  */
@@ -19,9 +23,6 @@ const startHandler = async (ctx) => {
     const telegramId = ctx.from.id;
     console.log('[BOT] /start from user:', telegramId);
 
-    const existingUser = await User.findOne({ telegramId });
-
-    // Всегда показываем выбор языка (новый и существующий пользователь)
     const ruLocale = require('../../locales/ru');
     await ctx.reply(
       ruLocale.chooseLanguage,
@@ -50,7 +51,6 @@ const languageCallbackHandler = async (ctx) => {
     console.log('[BOT] language selected:', language, 'user:', telegramId);
 
     const existingUser = await User.findOne({ telegramId });
-    const isNew = !existingUser;
     const isOnboarded = existingUser && existingUser.fullName && !existingUser.onboardingStep;
 
     await User.findOneAndUpdate(
@@ -73,7 +73,12 @@ const languageCallbackHandler = async (ctx) => {
       return;
     }
 
-    await ctx.editMessageText(t.askName, { parse_mode: 'Markdown' });
+    // Шаг 1: имя + кнопка НАЗАД (к выбору языка)
+    const backLabel = language === 'uz' ? '← Orqaga (til)' : '← Назад (язык)';
+    await ctx.editMessageText(t.askName, {
+      parse_mode: 'Markdown',
+      ...backBtn(backLabel, 'onb_back_lang'),
+    });
   } catch (err) {
     console.error('[LANGUAGE CALLBACK]', err);
     await ctx.answerCbQuery();
@@ -88,7 +93,6 @@ const currencyCallbackHandler = async (ctx) => {
   try {
     const telegramId = ctx.from.id;
     const currency = ctx.callbackQuery.data === 'currency_sum' ? 'sum' : 'rub';
-    const currencyLabel = currency === 'sum' ? 'Сум (UZS)' : 'Рубль (RUB)';
 
     const user = await User.findOne({ telegramId });
     if (!user) {
@@ -97,12 +101,16 @@ const currencyCallbackHandler = async (ctx) => {
     }
 
     const t = require(`../../locales/${user.language}`);
-    const fullName = user.fullName || ctx.from.first_name || '';
-
     await User.findOneAndUpdate({ telegramId }, { currency, onboardingStep: 'awaiting_card_number' });
 
     await ctx.answerCbQuery();
-    await ctx.editMessageText(t.askCardNumber, { parse_mode: 'Markdown' });
+
+    // Шаг 3: номер карты + кнопка НАЗАД (к выбору валюты)
+    const backLabel = user.language === 'uz' ? '← Orqaga (valyuta)' : '← Назад (валюта)';
+    await ctx.editMessageText(t.askCardNumber, {
+      parse_mode: 'Markdown',
+      ...backBtn(backLabel, 'onb_back_currency'),
+    });
   } catch (err) {
     console.error('[CURRENCY CALLBACK]', err);
     await ctx.answerCbQuery();
@@ -132,4 +140,105 @@ const newCardCurrencyCallbackHandler = async (ctx) => {
   }
 };
 
-module.exports = { startHandler, languageCallbackHandler, currencyCallbackHandler, newCardCurrencyCallbackHandler, getMainMenu };
+// ── BACK callbacks ─────────────────────────────────────────────────────────
+
+/** Назад → выбор языка */
+const onbBackLangHandler = async (ctx) => {
+  try {
+    await ctx.answerCbQuery();
+    const ruLocale = require('../../locales/ru');
+    await ctx.editMessageText(ruLocale.chooseLanguage, {
+      ...Markup.inlineKeyboard([
+        [
+          Markup.button.callback(ruLocale.btnRussian, 'lang_ru'),
+          Markup.button.callback(ruLocale.btnUzbek, 'lang_uz'),
+        ],
+      ]),
+    });
+  } catch (err) {
+    console.error('[ONB_BACK_LANG]', err);
+    await ctx.answerCbQuery();
+  }
+};
+
+/** Назад → ввод имени */
+const onbBackNameHandler = async (ctx) => {
+  try {
+    const telegramId = ctx.from.id;
+    const user = await User.findOne({ telegramId });
+    const lang = user?.language || 'ru';
+    const t = require(`../../locales/${lang}`);
+
+    await User.findOneAndUpdate({ telegramId }, { onboardingStep: 'awaiting_name' });
+    await ctx.answerCbQuery();
+
+    const backLabel = lang === 'uz' ? '← Orqaga (til)' : '← Назад (язык)';
+    await ctx.editMessageText(t.askName, {
+      parse_mode: 'Markdown',
+      ...backBtn(backLabel, 'onb_back_lang'),
+    });
+  } catch (err) {
+    console.error('[ONB_BACK_NAME]', err);
+    await ctx.answerCbQuery();
+  }
+};
+
+/** Назад → выбор валюты */
+const onbBackCurrencyHandler = async (ctx) => {
+  try {
+    const telegramId = ctx.from.id;
+    const user = await User.findOne({ telegramId });
+    const lang = user?.language || 'ru';
+    const t = require(`../../locales/${lang}`);
+    const fullName = user?.fullName || '';
+
+    await User.findOneAndUpdate({ telegramId }, { onboardingStep: 'awaiting_currency' });
+    await ctx.answerCbQuery();
+
+    const backLabel = lang === 'uz' ? '← Orqaga (ism)' : '← Назад (имя)';
+    await ctx.editMessageText(t.askCurrency(fullName), {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback(t.btnSum, 'currency_sum'), Markup.button.callback(t.btnRub, 'currency_rub')],
+        [Markup.button.callback(backLabel, 'onb_back_name')],
+      ]),
+    });
+  } catch (err) {
+    console.error('[ONB_BACK_CURRENCY]', err);
+    await ctx.answerCbQuery();
+  }
+};
+
+/** Назад → ввод номера карты */
+const onbBackCardNumHandler = async (ctx) => {
+  try {
+    const telegramId = ctx.from.id;
+    const user = await User.findOne({ telegramId });
+    const lang = user?.language || 'ru';
+    const t = require(`../../locales/${lang}`);
+
+    await User.findOneAndUpdate({ telegramId }, { onboardingStep: 'awaiting_card_number' });
+    await ctx.answerCbQuery();
+
+    const backLabel = lang === 'uz' ? '← Orqaga (valyuta)' : '← Назад (валюта)';
+    await ctx.editMessageText(t.askCardNumber, {
+      parse_mode: 'Markdown',
+      ...backBtn(backLabel, 'onb_back_currency'),
+    });
+  } catch (err) {
+    console.error('[ONB_BACK_CARD_NUM]', err);
+    await ctx.answerCbQuery();
+  }
+};
+
+module.exports = {
+  startHandler,
+  languageCallbackHandler,
+  currencyCallbackHandler,
+  newCardCurrencyCallbackHandler,
+  getMainMenu,
+  onbBackLangHandler,
+  onbBackNameHandler,
+  onbBackCurrencyHandler,
+  onbBackCardNumHandler,
+};

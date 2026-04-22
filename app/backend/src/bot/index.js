@@ -1,5 +1,6 @@
 const { Telegraf } = require('telegraf');
-const { startHandler, languageCallbackHandler, currencyCallbackHandler, newCardCurrencyCallbackHandler } = require('./handlers/start');
+const { startHandler, languageCallbackHandler, currencyCallbackHandler, newCardCurrencyCallbackHandler,
+        onbBackLangHandler, onbBackNameHandler, onbBackCurrencyHandler, onbBackCardNumHandler } = require('./handlers/start');
 const { createFamilyHandler, joinFamilyHandler } = require('./handlers/family');
 const { messageHandler, deleteTransactionCallback } = require('./handlers/message');
 const { reportHandler } = require('./handlers/report');
@@ -28,6 +29,12 @@ const createBot = () => {
   bot.action(/^card_delete_/, cardDeleteCallback);
   bot.action('card_add', cardAddCallback);
   bot.action(/^delete_/, deleteTransactionCallback);
+
+  // Кнопки НАЗАД во время онбординга
+  bot.action('onb_back_lang',     onbBackLangHandler);
+  bot.action('onb_back_name',     onbBackNameHandler);
+  bot.action('onb_back_currency', onbBackCurrencyHandler);
+  bot.action('onb_back_card_num', onbBackCardNumHandler);
 
   // Текстовые сообщения
   bot.on('text', messageHandler);
