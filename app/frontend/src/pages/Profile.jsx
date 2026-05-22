@@ -217,6 +217,7 @@ const Profile = () => {
 
   const displayName  = profile?.firstName || user?.firstName || 'Пользователь';
   const avatarLetter = displayName[0]?.toUpperCase() || 'U';
+  const photoUrl     = window.Telegram?.WebApp?.initDataUnsafe?.user?.photo_url || null;
 
   return (
     <div>
@@ -231,10 +232,19 @@ const Profile = () => {
             border: '3px solid var(--primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 12px',
+            overflow: 'hidden',
           }}>
-            <svg width="46" height="46" viewBox="0 0 24 24" fill="rgba(255,255,255,0.7)">
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-            </svg>
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={displayName}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span style={{ fontSize: 38, fontWeight: 900, color: 'var(--white)' }}>
+                {avatarLetter}
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 1.5, textTransform: 'uppercase' }}>
             {displayName}

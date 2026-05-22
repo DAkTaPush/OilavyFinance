@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
     }
 
     await Card.updateMany({ userId: req.user.telegramId }, { isActive: false });
-    const card = await Card.create({
+    await Card.create({
       userId: req.user.telegramId,
       cardNumber,
       holderName,
@@ -38,7 +38,8 @@ router.post('/', async (req, res) => {
       currency: currency || 'sum',
       isActive: true,
     });
-    res.json({ card });
+    const cards = await Card.find({ userId: req.user.telegramId }).sort({ createdAt: 1 });
+    res.json({ cards });
   } catch (err) {
     console.error('[API CARDS POST]', err);
     res.status(500).json({ error: 'Ошибка сервера' });

@@ -29,11 +29,17 @@ const AddTransactionModal = ({ initialType = 'expense', onClose, onSaved }) => {
 
   const handleTypeChange = (type) => setForm(initForm(type));
   const handleParentChange = (parent) => {
-    setForm((p) => ({ ...p, parent, sub: TREE_BY_TYPE[p.type][parent]?.subs[0] || '' }));
+    setForm((p) => ({
+      ...p,
+      parent,
+      sub: TREE_BY_TYPE[p.type][parent]?.subs[0] || '',
+      description: parent === 'Своё' ? p.description : '',
+    }));
   };
 
   const handleSave = async () => {
     if (!form.amount || Number(form.amount) <= 0) { setError('Введите сумму'); return; }
+    if (form.parent === 'Своё' && !form.description.trim()) { setError('Введите название транзакции'); return; }
     try {
       setError('');
       setSaving(true);
@@ -104,16 +110,6 @@ const AddTransactionModal = ({ initialType = 'expense', onClose, onSaved }) => {
           style={{ fontSize: 28, fontWeight: 700, marginBottom: 16, textAlign: 'left' }}
         />
 
-        {/* Описание */}
-        <div style={{ marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Название транзакции</div>
-        <input
-          className="input"
-          placeholder="Например: коммуналка"
-          value={form.description}
-          onChange={(e) => set('description', e.target.value)}
-          style={{ marginBottom: 16 }}
-        />
-
         {/* Категория */}
         <div style={{ marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Категория</div>
         <div style={{ marginBottom: subs.length ? 10 : 16 }}>
@@ -131,6 +127,21 @@ const AddTransactionModal = ({ initialType = 'expense', onClose, onSaved }) => {
               onChange={(v) => set('sub', v)}
             />
           </div>
+        )}
+
+        {/* Название транзакции — только для категории "Своё" */}
+        {form.parent === 'Своё' && (
+          <>
+            <div style={{ marginBottom: 6, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Название транзакции</div>
+            <input
+              className="input"
+              placeholder="Например: коммуналка"
+              value={form.description}
+              onChange={(e) => set('description', e.target.value)}
+              style={{ marginBottom: 16 }}
+              autoFocus
+            />
+          </>
         )}
 
         {/* Дата */}

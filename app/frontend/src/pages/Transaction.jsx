@@ -17,7 +17,6 @@ const Transaction = ({ onAddTransaction }) => {
   const [search, setSearch]             = useState('');
   const [transactions, setTransactions] = useState([]);
   const [totals, setTotals]             = useState({ expenses: 0, incomes: 0 });
-  const [activeCard, setActiveCard]     = useState(null);
   const [loading, setLoading]           = useState(true);
   const [showModal, setShowModal]       = useState(false);
   const [modalType, setModalType]       = useState('expense');
@@ -38,11 +37,10 @@ const Transaction = ({ onAddTransaction }) => {
       if (filter !== 'all') params.type = filter;
       if (search)           params.search = search;
 
-      const [listRes, expRes, incRes, cardsRes] = await Promise.all([
+      const [listRes, expRes, incRes] = await Promise.all([
         api.get('/api/transactions', { params }),
         api.get('/api/transactions', { params: { type: 'expense', limit: 500 } }),
         api.get('/api/transactions', { params: { type: 'income',  limit: 500 } }),
-        api.get('/api/cards'),
       ]);
 
       setTransactions(listRes.data.transactions || []);
@@ -50,8 +48,6 @@ const Transaction = ({ onAddTransaction }) => {
         expenses: (expRes.data.transactions || []).reduce((s, t) => s + t.amount, 0),
         incomes:  (incRes.data.transactions || []).reduce((s, t) => s + t.amount, 0),
       });
-      const cards = cardsRes.data.cards || [];
-      setActiveCard(cards.find(c => c.isActive) || cards[0] || null);
     } catch (err) {
       console.error('[TRANSACTION]', err);
     } finally {
@@ -87,33 +83,6 @@ const Transaction = ({ onAddTransaction }) => {
       <div className="page-header">💳 {t(lang, 'nav_transaction')}</div>
 
       <div style={{ padding: '0 14px' }}>
-        {/* Баланс */}
-        <div className="card" style={{ textAlign: 'center', padding: '16px 10px', marginBottom: 10 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, fontWeight: 800, letterSpacing: 0.5 }}>
-            {t(lang, 'balance')}
-          </div>
-          {activeCard ? (
-            <>
-              <div style={{
-                color: activeCard.balance >= 0 ? 'var(--income)' : 'var(--expense)',
-                fontWeight: 900, fontSize: 22,
-              }}>
-                {new Intl.NumberFormat('ru-RU').format(activeCard.balance ?? 0)} {activeCard.currency === 'sum' ? t(lang, 'sum_label') : t(lang, 'rub_label')}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                💳 **** {(activeCard.cardNumber || '').replace(/\D/g, '').slice(-4)}
-              </div>
-            </>
-          ) : (
-            <div style={{
-              color: (totals.incomes - totals.expenses) >= 0 ? 'var(--income)' : 'var(--expense)',
-              fontWeight: 900, fontSize: 22,
-            }}>
-              {(totals.incomes - totals.expenses) >= 0 ? '+' : ''}{formatAmount(totals.incomes - totals.expenses)}
-            </div>
-          )}
-        </div>
-
         {/* Итоговые карточки */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
           <div className="card" style={{ flex: 1, textAlign: 'center', padding: '14px 10px' }}>

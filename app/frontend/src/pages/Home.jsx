@@ -26,6 +26,7 @@ const Home = ({ onAddTransaction }) => {
   const [period, setPeriod]       = useState('today');
   const [showMenu, setShowMenu]   = useState(false);
   const [allTxs, setAllTxs]      = useState([]);
+  const [activeCard, setActiveCard] = useState(null);
   const [loading, setLoading]     = useState(true);
   const menuRef                   = useRef(null);
 
@@ -34,10 +35,13 @@ const Home = ({ onAddTransaction }) => {
     try {
       setLoading(true);
       const today = dayjs();
-      const { data } = await api.get('/api/transactions', {
-        params: { month: today.month() + 1, year: today.year(), limit: 500 },
-      });
-      setAllTxs(data.transactions || []);
+      const [txRes, cardsRes] = await Promise.all([
+        api.get('/api/transactions', { params: { month: today.month() + 1, year: today.year(), limit: 500 } }),
+        api.get('/api/cards'),
+      ]);
+      setAllTxs(txRes.data.transactions || []);
+      const cards = cardsRes.data.cards || [];
+      setActiveCard(cards.find(c => c.isActive) || cards[0] || null);
     } catch (err) {
       console.error('[HOME]', err);
     } finally {
@@ -59,20 +63,16 @@ const Home = ({ onAddTransaction }) => {
     try {
       await api.delete(`/api/transactions/${id}`);
       setAllTxs((prev) => prev.filter((tx) => tx._id !== id));
+      const { data } = await api.get('/api/cards');
+      const cards = data.cards || [];
+      setActiveCard(cards.find(c => c.isActive) || cards[0] || null);
     } catch (err) {
       console.error('[HOME DELETE]', err);
     }
   };
 
   const periodTxs = filterByPeriod(allTxs, period);
-  const expenses  = periodTxs.filter((tx) => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
-  const incomes   = periodTxs.filter((tx) => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
-  const transfers = periodTxs.filter((tx) => tx.type === 'transfer').reduce((s, tx) => s + tx.amount, 0);
   const lastTxs   = periodTxs.filter((tx) => tx.type === activeTab).slice(0, 5);
-
-  const currentAmount = activeTab === 'expense' ? expenses : activeTab === 'income' ? incomes : transfers;
-  const amountColor   = activeTab === 'expense' ? 'var(--expense)' : activeTab === 'income' ? 'var(--income)' : 'var(--transfer)';
-  const amountSign    = activeTab === 'expense' ? '-' : activeTab === 'income' ? '+' : '↔';
 
   return (
     <div>
@@ -80,95 +80,95 @@ const Home = ({ onAddTransaction }) => {
 
       <div style={{ padding: '0 14px' }}>
 
-        {/* ── Карточка статистики ── */}
-        <div className="card" style={{ marginBottom: 14 }}>
-
-          {/* Селектор периода */}
-          <div ref={menuRef} style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
-            <button
-              onClick={() => setShowMenu((v) => !v)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                background: 'var(--bg-card-dark)',
-                border: 'none', borderRadius: 12,
-                padding: '8px 14px', cursor: 'pointer',
-                color: 'var(--white)',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>📅</span>
-              <span style={{ fontWeight: 900, fontSize: 14, letterSpacing: 1 }}>
-                {t(lang, `period_${period}`).toUpperCase()}
-              </span>
-              <span style={{ fontSize: 13, opacity: 0.7 }}>{showMenu ? '▲' : '▼'}</span>
-            </button>
-
-            {showMenu && (
+        {/* ── Баланс ── */}
+        <div className="card" style={{ textAlign: 'center', padding: '16px 10px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, fontWeight: 800, letterSpacing: 0.5 }}>
+            {t(lang, 'balance')}
+          </div>
+          {activeCard ? (
+            <>
               <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300,
-                background: '#2a0060',
-                border: '1.5px solid rgba(140,0,255,0.5)',
-                borderRadius: 16,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
-                overflow: 'hidden', minWidth: 180,
+                color: activeCard.balance >= 0 ? 'var(--income)' : 'var(--expense)',
+                fontWeight: 900, fontSize: 26,
               }}>
-                {PERIODS.map((p, i) => (
-                  <button
-                    key={p}
-                    onClick={() => { setPeriod(p); setShowMenu(false); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      width: '100%', padding: '14px 18px',
-                      background: period === p ? 'rgba(140,0,255,0.4)' : 'transparent',
-                      borderTop: i > 0 ? '1px solid rgba(255,255,255,0.08)' : 'none',
-                      borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
-                      color: 'var(--white)', textAlign: 'left',
-                      fontWeight: 800, fontSize: 14,
-                      cursor: 'pointer', letterSpacing: 0.5,
-                    }}
-                  >
-                    <span style={{ fontSize: 18 }}>
-                      {p === 'today' ? '📆' : p === 'week' ? '📅' : '🗓️'}
-                    </span>
-                    {t(lang, `period_${p}`)}
-                    {period === p && <span style={{ marginLeft: 'auto', color: 'var(--primary-light)' }}>✓</span>}
-                  </button>
-                ))}
+                {new Intl.NumberFormat('ru-RU').format(activeCard.balance ?? 0)} {activeCard.currency === 'sum' ? t(lang, 'sum_label') : t(lang, 'rub_label')}
               </div>
-            )}
-          </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                💳 **** {(activeCard.cardNumber || '').replace(/\D/g, '').slice(-4)}
+              </div>
+            </>
+          ) : (
+            <div style={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: 16 }}>
+              {t(lang, 'no_cards')}
+            </div>
+          )}
+        </div>
 
-          {/* Переключатель расходы/доходы */}
-          <div className="tab-switcher" style={{ marginBottom: 16 }}>
-            <button
-              className={`tab${activeTab === 'expense' ? ' active' : ''}`}
-              onClick={() => setActiveTab('expense')}
-            >
-              {t(lang, 'expenses')}
-            </button>
-            <button
-              className={`tab${activeTab === 'income' ? ' active' : ''}`}
-              onClick={() => setActiveTab('income')}
-            >
-              {t(lang, 'incomes')}
-            </button>
-            <button
-              className={`tab${activeTab === 'transfer' ? ' active' : ''}`}
-              onClick={() => setActiveTab('transfer')}
-            >
-              {t(lang, 'transfer')}
-            </button>
-          </div>
+        {/* Переключатель расходы/доходы/переводы */}
+        <div className="tab-switcher" style={{ marginBottom: 14 }}>
+          <button className={`tab${activeTab === 'expense' ? ' active' : ''}`} onClick={() => setActiveTab('expense')}>
+            {t(lang, 'expenses')}
+          </button>
+          <button className={`tab${activeTab === 'income' ? ' active' : ''}`} onClick={() => setActiveTab('income')}>
+            {t(lang, 'incomes')}
+          </button>
+          <button className={`tab${activeTab === 'transfer' ? ' active' : ''}`} onClick={() => setActiveTab('transfer')}>
+            {t(lang, 'transfer')}
+          </button>
+        </div>
 
-          {/* Сумма */}
-          <div className="amount-large" style={{ color: amountColor, marginBottom: 10 }}>
-            {amountSign}{formatAmount(currentAmount)}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>
-            {t(lang, 'today_expenses')}: {formatAmount(expenses)}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            {t(lang, 'family_transfers')}: {formatAmount(transfers)}
-          </div>
+        {/* Селектор периода */}
+        <div ref={menuRef} style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
+          <button
+            onClick={() => setShowMenu((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--bg-card-dark)',
+              border: 'none', borderRadius: 12,
+              padding: '8px 14px', cursor: 'pointer',
+              color: 'var(--white)',
+            }}
+          >
+            <span style={{ fontSize: 18 }}>📅</span>
+            <span style={{ fontWeight: 900, fontSize: 14, letterSpacing: 1 }}>
+              {t(lang, `period_${period}`).toUpperCase()}
+            </span>
+            <span style={{ fontSize: 13, opacity: 0.7 }}>{showMenu ? '▲' : '▼'}</span>
+          </button>
+
+          {showMenu && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300,
+              background: '#2a0060',
+              border: '1.5px solid rgba(140,0,255,0.5)',
+              borderRadius: 16,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+              overflow: 'hidden', minWidth: 180,
+            }}>
+              {PERIODS.map((p, i) => (
+                <button
+                  key={p}
+                  onClick={() => { setPeriod(p); setShowMenu(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    width: '100%', padding: '14px 18px',
+                    background: period === p ? 'rgba(140,0,255,0.4)' : 'transparent',
+                    borderTop: i > 0 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                    borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
+                    color: 'var(--white)', textAlign: 'left',
+                    fontWeight: 800, fontSize: 14,
+                    cursor: 'pointer', letterSpacing: 0.5,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>
+                    {p === 'today' ? '📆' : p === 'week' ? '📅' : '🗓️'}
+                  </span>
+                  {t(lang, `period_${p}`)}
+                  {period === p && <span style={{ marginLeft: 'auto', color: 'var(--primary-light)' }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Кнопки действий ── */}

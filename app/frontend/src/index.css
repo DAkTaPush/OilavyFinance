@@ -81,20 +81,26 @@ body {
   border-radius: var(--radius-md);
   padding: 4px;
   gap: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.tab-switcher::-webkit-scrollbar { display: none; }
 .tab-switcher .tab {
   flex: 1;
-  padding: 9px 6px;
+  min-width: fit-content;
+  padding: 9px 10px;
   border-radius: 10px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   transition: background 0.15s, color 0.15s;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .tab-switcher .tab.active {
   background: var(--primary);
@@ -210,9 +216,11 @@ body {
 }
 .transaction-card .amount {
   font-weight: 800;
-  font-size: 15px;
+  font-size: 13px;
   flex-shrink: 0;
   text-align: right;
+  max-width: 120px;
+  word-break: break-word;
 }
 .amount.expense  { color: var(--expense); }
 .amount.income   { color: var(--income); }

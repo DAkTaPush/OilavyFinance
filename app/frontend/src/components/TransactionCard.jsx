@@ -1,5 +1,4 @@
-import { getCategoryInfo } from '../utils/format';
-import { formatAmount, formatDate } from '../utils/format';
+import { getCategoryInfo, formatAmount, formatDate } from '../utils/format';
 
 const TYPE_COLOR = {
   expense:  'var(--expense)',
